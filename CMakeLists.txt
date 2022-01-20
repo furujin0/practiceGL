@@ -12,6 +12,13 @@ find_package(GLFW REQUIRED)
 
 include_directories(${GLFW_INCLUDE_DIR})
 include_directories(${GLAD_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR})
+
+add_library(
+    shader
+    shader.h
+    shader.cpp
+)
 
 add_executable(
     glTest
@@ -22,4 +29,5 @@ add_executable(
 target_link_libraries(
     glTest
     ${GLFW_LIBRARIES}
+    shader
 )
