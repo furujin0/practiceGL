@@ -9,9 +9,11 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/deps)
 set(GLAD_DIR ${PROJECT_SOURCE_DIR}/deps/glad)
 
 find_package(GLFW REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 include_directories(${GLFW_INCLUDE_DIR})
 include_directories(${GLAD_DIR}/include)
+include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${PROJECT_SOURCE_DIR})
 
 add_library(

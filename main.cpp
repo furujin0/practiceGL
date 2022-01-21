@@ -1,9 +1,11 @@
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <string>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "shader.h"
@@ -131,7 +133,13 @@ int main(int argc, char** argv) {
 	shader.use();
 	shader.setInt("texture1", 0);
 	shader.setInt("texture2", 1);
+	
+
 	while (!glfwWindowShouldClose(window)) {
+
+		glm::mat4 transform = glm::mat4(1.0f);
+		transform = glm::rotate(transform, glm::radians(360.0f * (float)glfwGetTime()), glm::vec3(0.0f, 0.0f, 1.0f));
+		transform = glm::scale(transform, glm::vec3(0.5f, 0.5f, 0.5f));
 		processInput(window);
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -142,9 +150,13 @@ int main(int argc, char** argv) {
 		glBindTexture(GL_TEXTURE_2D, texture2);
 		shader.use();
 		shader.setFloat("mixRatio", mixRatio);
+		shader.setMatrix4f("transform", transform);
 		glBindVertexArray(vao);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
+		glm::mat4 transform2;
+		transform2 = glm::translate(transform, glm::vec3(1.0f, 1.0f, 0.0f));
+		shader.setMatrix4f("transform", transform2);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

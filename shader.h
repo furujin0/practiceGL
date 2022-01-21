@@ -4,6 +4,10 @@
 #include <string>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <Eigen/Geometry>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 class Shader {
 
@@ -22,7 +26,8 @@ public:
 	void setInt(const std::string& name, GLint value);
 
 	void setFloat(const std::string& name, GLfloat value);
-
+	
+	void setMatrix4f(const std::string& name, const glm::mat4& mat);
 };
 
 #endif // !_PRACTICE_GL_SHADER_H
