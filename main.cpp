@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
 		-0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
 		-0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
 		-0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
-		
+
 		 0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
 		 0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
 		 0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
 		 0.5f, -0.5f,  0.5f, 1.0f, 0.0f,
 		-0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
 		-0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-		
+
 		-0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
 		 0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
 		 0.5f, 0.5f,  0.5f, 1.0f, 0.0f,
@@ -98,6 +98,20 @@ int main(int argc, char** argv) {
 		-0.5f, 0.5f, -0.5f, 0.0f, 1.0f
 	};
 
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(2.0f, 5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f, 3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f, 2.0f, -2.5f),
+		glm::vec3(1.5f, 0.2f, -1.5f),
+		glm::vec3(-1.3f, 1.0f, -1.5f)
+	};
+
+	const int numCubes = sizeof(cubePositions) / sizeof(glm::vec3);
 	//unsigned int indices[] = {
 	//	0, 1, 3,
 	//	1, 2, 3
@@ -178,8 +192,6 @@ int main(int argc, char** argv) {
 	while (!glfwWindowShouldClose(window)) {
 
 		processInput(window);
-		auto angle = static_cast<float>(180.f * glfwGetTime());
-		auto modelMat = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(1.0f, 1.0f, 1.0f));
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -191,10 +203,18 @@ int main(int argc, char** argv) {
 		shader.setFloat("mixRatio", mixRatio);
 		shader.setMatrix4f("projMat", projMat);
 		shader.setMatrix4f("viewMat", viewMat);
-		shader.setMatrix4f("modelMat", modelMat);
 
 		glBindVertexArray(vao);
-		glDrawArrays(GL_TRIANGLES, 0, numPoints);
+		for (size_t iCube = 0; iCube < numCubes; iCube++) {
+			auto angle = static_cast<float>(180.f * glfwGetTime()) + iCube * 20.0f;			
+			auto modelMat = glm::translate(glm::mat4(1.0f), cubePositions[iCube]);
+			if (iCube % 3 == 0) {
+				modelMat = glm::rotate(modelMat, glm::radians(angle), glm::vec3(1.0f, 1.0f, 1.0f));
+			}
+			shader.setMatrix4f("modelMat", modelMat);
+			glDrawArrays(GL_TRIANGLES, 0, numPoints);
+
+		}
 		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		glfwSwapBuffers(window);
