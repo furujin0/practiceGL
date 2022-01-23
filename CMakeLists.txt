@@ -5,6 +5,9 @@ project(glMisc)
 cmake_policy(SET CMP0074 NEW)
 
 set(CMAKE_CXX_STANDARD 17)
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/deps)
 set(GLAD_DIR ${PROJECT_SOURCE_DIR}/deps/glad)
 
@@ -19,6 +22,7 @@ add_library(
     shader.h
     shader.cpp
 )
+set_target_properties(shader PROPERTIES FOLDER "practiceGL")
 
 add_executable(
     glTest
@@ -31,3 +35,4 @@ target_link_libraries(
     ${GLFW_LIBRARIES}
     shader
 )
+set_target_properties(glTest PROPERTIES FOLDER "practiceGL")

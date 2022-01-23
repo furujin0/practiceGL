@@ -1,7 +1,10 @@
+#include <algorithm>
+#include <fstream>
+#include <functional>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <sstream>
-#include <fstream>
 #include <string>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -10,13 +13,70 @@
 #include "stb_image.h"
 #include "shader.h"
 
+//global states
+
+constexpr int SCREEN_WIDTH = 800;
+constexpr int SCREEN_HEIGHT = 600;
 float mixRatio = 0.5f;
+float lastTime = 0;
+
+//camera parameters
+constexpr float PITCH_MAX = 89.0f;
+constexpr float PITCH_MIN = -89.0f;
+float cameraSpeed = 1.0f;
+glm::vec3 cameraPos(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
+float yaw = -90.0f;
+float roll = 0.0f;
+float pitch = 0.0f;
+float fov = 45.0;
+
+//mouse callback params
+bool firstMouse = true;
+float sensitivity = 1.0f;
+double lastX = SCREEN_WIDTH / 2;
+double lastY = SCREEN_HEIGHT / 2;
+
+void mouse_callback(GLFWwindow* window, double x, double y) {
+	if (firstMouse) {
+		lastX = x;
+		lastY = y;
+		firstMouse = false;
+	}
+	float xOffset = x - lastX;
+	float yOffset = lastY- y;
+	lastX = x;
+	lastY = y;
+	xOffset *= sensitivity;
+	yOffset *= sensitivity;
+
+	yaw += xOffset;
+	pitch = std::clamp(pitch + yOffset, PITCH_MIN, PITCH_MAX);
+
+	cameraFront = glm::normalize(
+		glm::vec3(
+			std::cosf(glm::radians(yaw)) * cosf(glm::radians(pitch)),
+			std::sinf(glm::radians(pitch)),
+			std::sinf(glm::radians(yaw)) * cosf(glm::radians(pitch))
+		)
+	);
+}
+
+void scroll_callback(GLFWwindow* window, double x, double y) {
+	fov = std::clamp(static_cast<float>(fov - y), 1.0f, 45.0f);
+}
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
+
 void processInput(GLFWwindow* window) {
+	
+	auto currentTime = glfwGetTime();
+	float deltaTime = currentTime - lastTime;
+	float cameraTranslation = cameraSpeed * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, true);
 	}
@@ -26,6 +86,19 @@ void processInput(GLFWwindow* window) {
 	else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 		mixRatio = std::min(mixRatio + 0.001f, 1.0f);
 	}
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		cameraPos += cameraTranslation * cameraFront;
+	}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+		cameraPos -= cameraTranslation * cameraFront;
+	}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+		cameraPos -= cameraTranslation * glm::cross(cameraFront, cameraUp);
+	}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+		cameraPos += cameraTranslation * glm::cross(cameraFront, cameraUp);
+	}	
+	lastTime = currentTime;
 }
 
 int main(int argc, char** argv) {
@@ -35,7 +108,7 @@ int main(int argc, char** argv) {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "LearnOpenGL", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window." << std::endl;
 		glfwTerminate();
@@ -48,7 +121,9 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
-	glfwSetFramebufferSizeCallback(window, frame_buffer_size_callback);
+	glfwSetFramebufferSizeCallback(window, frame_buffer_size_callback);	
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
 
 	Shader shader("../shader.vert", "../shader.frag");
 
@@ -185,13 +260,18 @@ int main(int argc, char** argv) {
 	shader.setInt("texture1", 0);
 	shader.setInt("texture2", 1);
 	
-	auto viewMat = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
-	auto projMat = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f, 100.0f);
 
 	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window)) {
 
 		processInput(window);
+		auto viewMat = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		auto projMat = glm::perspective(
+			glm::radians(fov),
+			static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT),
+			0.1f,
+			100.0f
+		);
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -199,6 +279,7 @@ int main(int argc, char** argv) {
 		glBindTexture(GL_TEXTURE_2D, texture1);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
+
 		shader.use();
 		shader.setFloat("mixRatio", mixRatio);
 		shader.setMatrix4f("projMat", projMat);
