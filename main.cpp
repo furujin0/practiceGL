@@ -12,6 +12,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "shader.h"
+#include "privdef.h"
+#include "camera.h"
 
 //global states
 
@@ -28,7 +30,6 @@ glm::vec3 cameraPos(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
 float yaw = -90.0f;
-float roll = 0.0f;
 float pitch = 0.0f;
 float fov = 45.0;
 
@@ -70,7 +71,6 @@ void scroll_callback(GLFWwindow* window, double x, double y) {
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
-
 
 void processInput(GLFWwindow* window) {
 	
@@ -127,8 +127,6 @@ int main(int argc, char** argv) {
 
 	Shader shader("../shader.vert", "../shader.frag");
 
-
-	//Create another triangle
 	float vertices[] = {
 		-0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
 		 0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
@@ -187,39 +185,27 @@ int main(int argc, char** argv) {
 	};
 
 	const int numCubes = sizeof(cubePositions) / sizeof(glm::vec3);
-	//unsigned int indices[] = {
-	//	0, 1, 3,
-	//	1, 2, 3
-	//};
 
 	GLuint vao, vbo, ebo;
 	constexpr GLuint numPoints = 36;
 	constexpr GLuint stride = 5;
 	glGenVertexArrays(1, &vao);
 	glGenBuffers(1, &vbo);
-	//glGenBuffers(1, &ebo);
 	glBindVertexArray(vao);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(2);
-	//glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(6 * sizeof(float)));
-	//glEnableVertexAttribArray(2);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	
 	//Create texture
 	GLuint texture1;
 	glGenTextures(1, &texture1);
@@ -259,7 +245,6 @@ int main(int argc, char** argv) {
 	shader.use();
 	shader.setInt("texture1", 0);
 	shader.setInt("texture2", 1);
-	
 
 	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window)) {
@@ -268,7 +253,7 @@ int main(int argc, char** argv) {
 		auto viewMat = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		auto projMat = glm::perspective(
 			glm::radians(fov),
-			static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT),
+			static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
 			0.1f,
 			100.0f
 		);
@@ -294,10 +279,8 @@ int main(int argc, char** argv) {
 			}
 			shader.setMatrix4f("modelMat", modelMat);
 			glDrawArrays(GL_TRIANGLES, 0, numPoints);
-
 		}
 		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
