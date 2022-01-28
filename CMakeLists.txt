@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.10)
 
 project(practiceGL)
 
-cmake_policy(SET CMP0074 NEW)
+if(POLICY CMP0074)
+    cmake_policy(SET CMP0074 NEW)
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -42,7 +44,6 @@ add_executable(
     main.cpp
     privdef.h
 )
-
 target_link_libraries(
     glTest
     glad

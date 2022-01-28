@@ -16,9 +16,6 @@
 #include "camera.h"
 
 //global states
-
-constexpr int SCREEN_WIDTH = 800;
-constexpr int SCREEN_HEIGHT = 600;
 float mixRatio = 0.5f;
 float lastTime = 0;
 
@@ -28,8 +25,8 @@ auto camera = Camera::create();;
 //mouse callback params
 bool firstMouse = true;
 float sensitivity = 1.0f;
-double lastX = SCREEN_WIDTH / 2;
-double lastY = SCREEN_HEIGHT / 2;
+double lastX = SCR_WIDTH / 2;
+double lastY = SCR_HEIGHT / 2;
 
 void mouse_callback(GLFWwindow* window, double x, double y) {
 	if (firstMouse) {
@@ -56,8 +53,8 @@ void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow* window) {
-	
+void processInput(GLFWwindow* window)
+{
 	auto currentTime = glfwGetTime();
 	float deltaTime = currentTime - lastTime;
 	float cameraTranslation = camera->speed * deltaTime;
@@ -92,25 +89,29 @@ int main(int argc, char** argv) {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "LearnOpenGL", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(
+		SCR_WIDTH,
+		SCR_HEIGHT,
+		"LearnOpenGL",
+		NULL,
+		NULL
+	);
+
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window." << std::endl;
 		glfwTerminate();
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
-
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
-
 	glfwSetFramebufferSizeCallback(window, frame_buffer_size_callback);	
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 
 	Shader shader("../shader.vert", "../shader.frag");
-
 	float vertices[] = {
 		-0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
 		 0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
@@ -232,16 +233,7 @@ int main(int argc, char** argv) {
 
 	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window)) {
-
 		processInput(window);
-		auto viewMat = camera->viewMatrix();
-		auto projMat = glm::perspective(
-			glm::radians(camera->fov_deg),
-			static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
-			0.1f,
-			100.0f
-		);
-
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		glActiveTexture(GL_TEXTURE0);
@@ -251,8 +243,16 @@ int main(int argc, char** argv) {
 
 		shader.use();
 		shader.setFloat("mixRatio", mixRatio);
-		shader.setMatrix4f("projMat", projMat);
-		shader.setMatrix4f("viewMat", viewMat);
+		shader.setMatrix4f(
+			"projMat",
+			glm::perspective(
+				glm::radians(camera->fov_deg),
+				static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
+				0.1f,
+				100.0f
+			)
+		);
+		shader.setMatrix4f("viewMat", camera->viewMatrix());
 
 		glBindVertexArray(vao);
 		for (size_t iCube = 0; iCube < numCubes; iCube++) {
@@ -264,7 +264,6 @@ int main(int argc, char** argv) {
 			shader.setMatrix4f("modelMat", modelMat);
 			glDrawArrays(GL_TRIANGLES, 0, numPoints);
 		}
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
