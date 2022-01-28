@@ -23,15 +23,7 @@ float mixRatio = 0.5f;
 float lastTime = 0;
 
 //camera parameters
-constexpr float PITCH_MAX = 89.0f;
-constexpr float PITCH_MIN = -89.0f;
-float cameraSpeed = 1.0f;
-glm::vec3 cameraPos(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
-float yaw = -90.0f;
-float pitch = 0.0f;
-float fov = 45.0;
+auto camera = Camera::create();;
 
 //mouse callback params
 bool firstMouse = true;
@@ -52,20 +44,12 @@ void mouse_callback(GLFWwindow* window, double x, double y) {
 	xOffset *= sensitivity;
 	yOffset *= sensitivity;
 
-	yaw += xOffset;
-	pitch = std::clamp(pitch + yOffset, PITCH_MIN, PITCH_MAX);
-
-	cameraFront = glm::normalize(
-		glm::vec3(
-			std::cosf(glm::radians(yaw)) * cosf(glm::radians(pitch)),
-			std::sinf(glm::radians(pitch)),
-			std::sinf(glm::radians(yaw)) * cosf(glm::radians(pitch))
-		)
-	);
+	camera->yaw += xOffset;
+	camera->pitch += yOffset;
 }
 
 void scroll_callback(GLFWwindow* window, double x, double y) {
-	fov = std::clamp(static_cast<float>(fov - y), 1.0f, 45.0f);
+	camera->fov_deg = std::clamp(static_cast<float>(camera->fov_deg - y), 1.0f, 45.0f);
 }
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -76,7 +60,7 @@ void processInput(GLFWwindow* window) {
 	
 	auto currentTime = glfwGetTime();
 	float deltaTime = currentTime - lastTime;
-	float cameraTranslation = cameraSpeed * deltaTime;
+	float cameraTranslation = camera->speed * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, true);
 	}
@@ -87,16 +71,16 @@ void processInput(GLFWwindow* window) {
 		mixRatio = std::min(mixRatio + 0.001f, 1.0f);
 	}
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		cameraPos += cameraTranslation * cameraFront;
+		camera->pos += cameraTranslation * camera->front();
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		cameraPos -= cameraTranslation * cameraFront;
+		camera->pos -= cameraTranslation * camera->front();
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		cameraPos -= cameraTranslation * glm::cross(cameraFront, cameraUp);
+		camera->pos -= cameraTranslation * glm::cross(camera->front(), camera->up());
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		cameraPos += cameraTranslation * glm::cross(cameraFront, cameraUp);
+		camera->pos += cameraTranslation * glm::cross(camera->front(), camera->up());
 	}	
 	lastTime = currentTime;
 }
@@ -250,9 +234,9 @@ int main(int argc, char** argv) {
 	while (!glfwWindowShouldClose(window)) {
 
 		processInput(window);
-		auto viewMat = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		auto viewMat = camera->viewMatrix();
 		auto projMat = glm::perspective(
-			glm::radians(fov),
+			glm::radians(camera->fov_deg),
 			static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
 			0.1f,
 			100.0f
